@@ -1,3 +1,4 @@
+/*
 package com.revio.controller;
 
 import com.revio.dto.DashboardResponse;
@@ -92,3 +93,4 @@ public class DashboardController {
         return new ResponseEntity<>("Dashboard API is running!", HttpStatus.OK);
     }
 }
+*/
