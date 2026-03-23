@@ -47,7 +47,16 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
 
                         // ✅ IMPORTANT FIX (403 ka root cause)
-                        .anyRequest().permitAll()
+                        .requestMatchers("/auth/**").permitAll()
+
+                        // ✅ Allow preflight requests (CORS)
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                        // ✅ Optional (error endpoint)
+                        .requestMatchers("/error").permitAll()
+
+                        // 🔒 Baaki sab secure
+                        .anyRequest().authenticated()
                 )
 
                 // ✅ JWT filter add karo
