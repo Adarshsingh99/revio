@@ -4,9 +4,9 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.index.Indexed;
+import jakarta.persistence.PrePersist;
 import java.time.LocalDateTime;
 
 /**
@@ -45,9 +45,11 @@ public class User {
     /**
      * Called before saving to set timestamps
      */
+    @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
+    }
     }
 
     /**

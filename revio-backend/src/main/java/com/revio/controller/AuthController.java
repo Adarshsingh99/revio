@@ -1,4 +1,4 @@
-package com.crevio.controller;
+package com.revio.controller;
 
 import com.revio.dto.AuthResponse;
 import com.revio.dto.LoginRequest;
