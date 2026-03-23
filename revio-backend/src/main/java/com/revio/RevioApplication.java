@@ -18,7 +18,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  * @version 1.0.0
  */
 @SpringBootApplication
-@EnableScheduling
 @EnableScheduling // Enable scheduled tasks for daily revision system
 public class RevioApplication {
 
