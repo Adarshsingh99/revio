@@ -4,9 +4,11 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.index.Indexed;
-import jakarta.persistence.PrePersist;
 import java.time.LocalDateTime;
 
 /**
@@ -38,24 +40,9 @@ public class User {
 
     private String password;
 
+    @CreatedDate
     private LocalDateTime createdAt;
 
+    @LastModifiedDate
     private LocalDateTime updatedAt;
-
-    /**
-     * Called before saving to set timestamps
-     */
-    @PrePersist
-    public void prePersist() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
-    }
-    }
-
-    /**
-     * Called before updating to set updated timestamp
-     */
-    public void preUpdate() {
-        this.updatedAt = LocalDateTime.now();
-    }
 }

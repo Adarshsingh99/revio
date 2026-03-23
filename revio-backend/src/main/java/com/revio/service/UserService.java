@@ -117,7 +117,8 @@ public class UserService {
                 .email(user.getEmail())
                 .token(token)
                 .message("Login successful")
-                .build();    }    }
+                .build();
+    }
 
     /**
      * Get user by ID.

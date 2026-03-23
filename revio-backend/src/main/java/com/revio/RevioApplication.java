@@ -2,6 +2,7 @@ package com.revio;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.data.mongodb.config.EnableMongoAuditing;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
@@ -18,6 +19,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  * @version 1.0.0
  */
 @SpringBootApplication
+@EnableMongoAuditing
+@EnableScheduling
 @EnableScheduling // Enable scheduled tasks for daily revision system
 public class RevioApplication {
 

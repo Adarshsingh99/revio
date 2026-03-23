@@ -102,10 +102,6 @@ public class JwtTokenProvider {
                 .getPayload();
         return claims.get("email", String.class);
     }
-                .parseSignedClaims(token)
-                .getPayload();
-        return claims.get("email", String.class);
-    }
 
     /**
      * Extract JWT token from Authorization header.
