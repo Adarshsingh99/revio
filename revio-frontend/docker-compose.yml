@@ -1,0 +1,127 @@
+version: '3.8'
+
+services:
+  # ============================================
+  # MongoDB Database
+  # ============================================
+  mongodb:
+    image: mongo:latest
+    container_name: revio_mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: revio_db
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin123
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    networks:
+      - revio_network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  # ============================================
+  # MongoDB Express (Web UI) - Optional
+  # ============================================
+  mongo-express:
+    image: mongo-express:latest
+    container_name: revio_mongo_express
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: admin123
+      ME_CONFIG_MONGODB_URL: mongodb://admin:admin123@mongodb:27017/
+      ME_CONFIG_BASICAUTH: false
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - revio_network
+
+  # ============================================
+  # Revio Backend (Spring Boot)
+  # ============================================
+  backend:
+    build:
+      context: ../revio-backend
+      dockerfile: Dockerfile
+    container_name: revio_backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATA_MONGODB_URI: mongodb://admin:admin123@mongodb:27017/revio_db?authSource=admin
+      SPRING_APPLICATION_NAME: revio-backend
+      JWT_SECRET: your-super-secret-jwt-key-change-this-in-production-environment-12345678901234567890
+      JWT_EXPIRATION: 86400000
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - revio_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/auth/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ============================================
+  # Revio Frontend (React)
+  # ============================================
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: revio_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      REACT_APP_API_URL: http://backend:8080/api
+      REACT_APP_ENV: development
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - revio_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  mongodb_data:
+    driver: local
+  mongodb_config:
+    driver: local
+
+networks:
+  revio_network:
+    driver: bridge
+
+# ============================================
+# Services Summary
+# ============================================
+# MongoDB:         http://localhost:27017
+# Mongo Express:   http://localhost:8081
+# Backend API:     http://localhost:8080/api
+# Frontend:        http://localhost:3000
+# 
+# Credentials:
+# MongoDB Admin:   admin / admin123
+# JWT Secret:      (change for production)
+# 
+# Start:   docker-compose up -d
+# Stop:    docker-compose down
+# Logs:    docker-compose logs -f

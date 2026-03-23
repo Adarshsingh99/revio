@@ -1,0 +1,100 @@
+# ============================================
+# REVIO FRONTEND - GIT IGNORE
+# ============================================
+
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Build and dist
+build/
+dist/
+.parcel-cache
+.next
+out/
+
+# IDE and Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.AppleDouble
+.LSOverride
+*.sublime-project
+*.sublime-workspace
+.webstorm
+.vscode/settings.json
+.vscode/launch.json
+.vscode/extensions.json
+
+# OS
+Thumbs.db
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+
+# Testing
+coverage/
+.nyc_output/
+*.lcov
+.c8rc
+
+# Logs
+logs
+*.log
+lerna-debug.log*
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# Lock files (optional - uncomment if shared)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# Misc
+.cache/
+.eslintcache
+.prettierignore
+
+# Local development
+.env.development
+.env.test
+local-data/
+
+# Temp files
+*.tmp
+*.bak
+*.swp
+
+# IDE
+*.iml
+.gradle
+.idea/
+out/
+.classpath
+.project
+
+# Node
+.npm
+.node-gyp/
+
+# Yarn
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*

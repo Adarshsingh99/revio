@@ -1,0 +1,223 @@
+package com.revio.controller;
+
+import com.revio.dto.RevisionTopicResponse;
+import com.revio.dto.TopicRequest;
+import com.revio.dto.TopicResponse;
+import com.revio.service.TopicService;
+import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+/**
+ * Topic Controller for managing topics and the smart revision system.
+ * 
+ * Endpoints:
+ * - GET /sections/{sectionId}/subsections/{subsectionId}/topics - Get topics
+ * - GET /sections/{sectionId}/subsections/{subsectionId}/topics/{topicId} - Get topic
+ * - POST /sections/{sectionId}/subsections/{subsectionId}/topics - Create topic
+ * - PUT /sections/{sectionId}/subsections/{subsectionId}/topics/{topicId} - Update topic
+ * - DELETE /sections/{sectionId}/subsections/{subsectionId}/topics/{topicId} - Delete topic
+ * - POST /topics/{topicId}/complete - Mark as complete and schedule revisions
+ * - POST /topics/{topicId}/revise - Complete revision and schedule next
+ * - GET /revision/today - Get today's revision topics
+ * 
+ * Requires authentication (JWT token).
+ */
+@RestController
+@Slf4j
+public class TopicController {
+
+    @Autowired
+    private TopicService topicService;
+
+    /**
+     * Get all topics in a subsection.
+     * 
+     * @param authentication Spring Security authentication object
+     * @param sectionId the section's ID
+     * @param subsectionId the subsection's ID
+     * @return ResponseEntity with list of TopicResponse objects
+     */
+    @GetMapping("/sections/{sectionId}/subsections/{subsectionId}/topics")
+    public ResponseEntity<List<TopicResponse>> getTopics(
+            Authentication authentication,
+            @PathVariable String sectionId,
+            @PathVariable String subsectionId) {
+        String userId = (String) authentication.getPrincipal();
+        log.info("Fetching topics for subsection {} by user: {}", subsectionId, userId);
+        
+        List<TopicResponse> topics = topicService.getTopicsBySubsection(userId, sectionId, subsectionId);
+        return new ResponseEntity<>(topics, HttpStatus.OK);
+    }
+
+    /**
+     * Get a specific topic.
+     * 
+     * @param authentication Spring Security authentication object
+     * @param sectionId the section's ID
+     * @param subsectionId the subsection's ID
+     * @param topicId the topic's ID
+     * @return ResponseEntity with TopicResponse
+     */
+    @GetMapping("/sections/{sectionId}/subsections/{subsectionId}/topics/{topicId}")
+    public ResponseEntity<TopicResponse> getTopicById(
+            Authentication authentication,
+            @PathVariable String sectionId,
+            @PathVariable String subsectionId,
+            @PathVariable String topicId) {
+        String userId = (String) authentication.getPrincipal();
+        log.info("Fetching topic {} by user: {}", topicId, userId);
+        
+        TopicResponse topic = topicService.getTopicById(userId, sectionId, topicId);
+        return new ResponseEntity<>(topic, HttpStatus.OK);
+    }
+
+    /**
+     * Create a new topic.
+     * 
+     * Request body:
+     * {
+     *   "title": "Binary Search",
+     *   "description": "Learn binary search algorithm"
+     * }
+     * 
+     * @param authentication Spring Security authentication object
+     * @param sectionId the section's ID
+     * @param subsectionId the subsection's ID
+     * @param topicRequest containing topic details
+     * @return ResponseEntity with created TopicResponse
+     */
+    @PostMapping("/sections/{sectionId}/subsections/{subsectionId}/topics")
+    public ResponseEntity<TopicResponse> createTopic(
+            Authentication authentication,
+            @PathVariable String sectionId,
+            @PathVariable String subsectionId,
+            @Valid @RequestBody TopicRequest topicRequest) {
+        String userId = (String) authentication.getPrincipal();
+        log.info("Creating topic for subsection {} by user: {}", subsectionId, userId);
+        
+        TopicResponse response = topicService.createTopic(userId, sectionId, subsectionId, topicRequest);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    /**
+     * Update a topic.
+     * 
+     * @param authentication Spring Security authentication object
+     * @param sectionId the section's ID
+     * @param subsectionId the subsection's ID
+     * @param topicId the topic's ID
+     * @param topicRequest containing updated details
+     * @return ResponseEntity with updated TopicResponse
+     */
+    @PutMapping("/sections/{sectionId}/subsections/{subsectionId}/topics/{topicId}")
+    public ResponseEntity<TopicResponse> updateTopic(
+            Authentication authentication,
+            @PathVariable String sectionId,
+            @PathVariable String subsectionId,
+            @PathVariable String topicId,
+            @Valid @RequestBody TopicRequest topicRequest) {
+        String userId = (String) authentication.getPrincipal();
+        log.info("Updating topic {} by user: {}", topicId, userId);
+        
+        TopicResponse response = topicService.updateTopic(userId, sectionId, topicId, topicRequest);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    /**
+     * Delete a topic.
+     * 
+     * @param authentication Spring Security authentication object
+     * @param sectionId the section's ID
+     * @param subsectionId the subsection's ID
+     * @param topicId the topic's ID
+     * @return ResponseEntity with success message
+     */
+    @DeleteMapping("/sections/{sectionId}/subsections/{subsectionId}/topics/{topicId}")
+    public ResponseEntity<String> deleteTopic(
+            Authentication authentication,
+            @PathVariable String sectionId,
+            @PathVariable String subsectionId,
+            @PathVariable String topicId) {
+        String userId = (String) authentication.getPrincipal();
+        log.info("Deleting topic {} by user: {}", topicId, userId);
+        
+        topicService.deleteTopic(userId, sectionId, topicId);
+        return new ResponseEntity<>("Topic deleted successfully", HttpStatus.OK);
+    }
+
+    /**
+     * ⭐ CORE FEATURE: Mark a topic as complete and schedule revisions.
+     * 
+     * This endpoint triggers the smart revision system:
+     * - Marks topic as COMPLETED
+     * - Generates revision dates:
+     *   * Day 1: Today
+     *   * Day 2: +1 day
+     *   * Day 3: +4 days
+     *   * Day 4: +11 days
+     * - Sets nextRevision to today
+     * 
+     * @param authentication Spring Security authentication object
+     * @param sectionId the section's ID
+     * @param topicId the topic's ID
+     * @return ResponseEntity with updated TopicResponse containing revision dates
+     */
+    @PostMapping("/sections/{sectionId}/topics/{topicId}/complete")
+    public ResponseEntity<TopicResponse> completeTopic(
+            Authentication authentication,
+            @PathVariable String sectionId,
+            @PathVariable String topicId) {
+        String userId = (String) authentication.getPrincipal();
+        log.info("Marking topic {} as complete and scheduling revisions by user: {}", topicId, userId);
+        
+        TopicResponse response = topicService.completeTopicAndScheduleRevision(userId, sectionId, topicId);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    /**
+     * Complete a revision session for a topic and schedule the next revision.
+     * 
+     * This endpoint moves the topic to the next revision date in the schedule.
+     * 
+     * @param authentication Spring Security authentication object
+     * @param sectionId the section's ID
+     * @param topicId the topic's ID
+     * @return ResponseEntity with updated TopicResponse
+     */
+    @PostMapping("/sections/{sectionId}/topics/{topicId}/revise")
+    public ResponseEntity<TopicResponse> completeRevision(
+            Authentication authentication,
+            @PathVariable String sectionId,
+            @PathVariable String topicId) {
+        String userId = (String) authentication.getPrincipal();
+        log.info("Completing revision for topic {} by user: {}", topicId, userId);
+        
+        TopicResponse response = topicService.completeRevisionForTopic(userId, sectionId, topicId);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    /**
+     * ⭐ CORE FEATURE: Get all topics that need revision today.
+     * 
+     * This endpoint returns all topics where nextRevision equals today.
+     * Used to populate the "Today's Revisions" section in the dashboard.
+     * 
+     * @param authentication Spring Security authentication object
+     * @return ResponseEntity with list of RevisionTopicResponse objects
+     */
+    @GetMapping("/revision/today")
+    public ResponseEntity<List<RevisionTopicResponse>> getTodayRevisions(Authentication authentication) {
+        String userId = (String) authentication.getPrincipal();
+        log.info("Fetching today's revision topics for user: {}", userId);
+        
+        List<RevisionTopicResponse> todayRevisions = topicService.getTodayRevisions(userId);
+        return new ResponseEntity<>(todayRevisions, HttpStatus.OK);
+    }
+}

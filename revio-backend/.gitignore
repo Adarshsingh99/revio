@@ -1,0 +1,83 @@
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+.classpath
+.project
+.settings/
+*.iml
+*.ipr
+*.iws
+
+# Build
+target/
+build/
+!.mvn/wrapper/maven-wrapper.jar
+!.gitkeep
+
+# Maven
+.mvn/
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+
+# Gradle
+.gradle/
+gradle/
+
+# Spring Boot
+spring-boot-devtools.properties
+*.log
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Application Properties
+application-dev.properties
+application-prod.properties
+application-test.properties
+
+# Database
+*.db
+*.sqlite
+*.h2.db
+
+# Node (if using Node.js tools)
+node_modules/
+npm-debug.log
+
+# Python
+__pycache__/
+*.pyc
+venv/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Misc
+*.class
+*.ctxt
+.mtj.tmp/
+*.jar
+*.rar
+
+# SonarQube
+.sonarlint/
+.sonarqube/
+
+# IDE Specific
+.vscode/settings.json
+.vscode/launch.json
+.idea/
+
+# Project specific
+revio-db/
+*.lock
