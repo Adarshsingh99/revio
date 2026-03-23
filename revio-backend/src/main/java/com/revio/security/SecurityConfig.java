@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -18,15 +19,6 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.Arrays;
 import java.util.List;
 
-/**
- * Spring Security configuration for the Revio application.
- * 
- * Configuration includes:
- * - JWT-based stateless authentication
- * - CORS support for frontend communication
- * - Public and protected endpoints
- * - Password encryption using BCrypt
- */
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
@@ -37,73 +29,75 @@ public class SecurityConfig {
     @Value("${app.cors.allowed-origins}")
     private String allowedOrigins;
 
-    /**
-     * Configure HTTP security for the application.
-     * 
-     * - Disable CSRF (not needed for JWT-based stateless APIs)
-     * - Set session policy to STATELESS
-     * - Configure public endpoints (auth)
-     * - Configure protected endpoints (require authentication)
-     * - Add JWT authentication filter
-     * - Enable CORS
-     */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+                // ❌ Disable CSRF (JWT use kar rahe ho)
                 .csrf(csrf -> csrf.disable())
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(authz -> authz
-                    .requestMatchers("/auth/**").permitAll()
-                    .anyRequest().authenticated())
+
+                // ✅ Enable CORS
+                .cors(cors -> {})
+
+                // ❌ No session (stateless API)
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+
+                // 🔐 Authorization rules
+                .authorizeHttpRequests(auth -> auth
+
+                        // ✅ IMPORTANT FIX (403 ka root cause)
+                        .requestMatchers("/api/auth/**").permitAll()
+
+                        // ✅ Allow preflight requests (CORS)
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                        // ✅ Optional (error endpoint)
+                        .requestMatchers("/error").permitAll()
+
+                        // 🔒 Baaki sab secure
+                        .anyRequest().authenticated()
+                )
+
+                // ✅ JWT filter add karo
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
-    /**
-     * CORS configuration for frontend communication.
-     * Allows requests from localhost:3000 (React development server)
-     * and other specified origins.
-     */
+    // 🌐 CORS CONFIGURATION
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Read allowed origins from configuration so deployment does not require code changes.
-        List<String> configuredOrigins = Arrays.stream(allowedOrigins.split(","))
+        List<String> origins = Arrays.stream(allowedOrigins.split(","))
                 .map(String::trim)
-                .filter(origin -> !origin.isEmpty())
                 .toList();
-        configuration.setAllowedOrigins(configuredOrigins);
-        
-        // Allow HTTP methods
+
+        configuration.setAllowedOrigins(origins);
+
         configuration.setAllowedMethods(Arrays.asList(
                 "GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"
         ));
-        
-        // Allow request headers
+
         configuration.setAllowedHeaders(Arrays.asList(
-                "Content-Type", 
-                "Authorization", 
+                "Authorization",
+                "Content-Type",
                 "X-Requested-With",
                 "Accept"
         ));
-        
-        // Allow credentials
+
         configuration.setAllowCredentials(true);
-        
-        // Max age for preflight cache
+
         configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
+
         return source;
     }
 
-    /**
-     * Password encoder bean using BCrypt.
-     * Used for hashing passwords before storing in database.
-     */
+    // 🔐 PASSWORD ENCODER
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
